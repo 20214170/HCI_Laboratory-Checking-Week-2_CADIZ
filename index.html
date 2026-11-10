@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkLokal - Urban Parking Assistant</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <style>
+    :root {
+      --bg-primary: #121212;
+      --bg-surface: #1e1e1e;
+      --bg-card: #282828;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --accent-blue: #007aff;
+      --accent-green: #34c759;
+      --accent-amber: #ff9500;
+      --accent-red: #ff3b30;
+      --border-color: #333333;
+
+      --font-base: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-size-sm: 0.875rem;
+      --font-size-body: 1rem;
+      --font-size-h2: 1.25rem;
+      --font-size-h1: 2rem;
+
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --max-width: 1000px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-base);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    header {
+      max-width: var(--max-width);
+      margin: 0 auto 24px auto;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-logo {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .header-brand h1 {
+      font-size: var(--font-size-h1);
+      color: var(--accent-blue);
+      line-height: 1.2;
+    }
+
+    .header-brand p {
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--font-size-sm);
+      color: var(--accent-green);
+      background: rgba(52, 199, 89, 0.1);
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(52, 199, 89, 0.3);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent-green);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(52, 199, 89, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+    }
+
+    .controls-container {
+      max-width: var(--max-width);
+      margin: 0 auto 24px auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 240px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-body);
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-primary);
+    }
+
+    .filter-btn.active {
+      background-color: var(--accent-blue);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+    }
+
+    .map-container {
+      max-width: var(--max-width);
+      margin: 0 auto 24px auto;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .map-header {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #gpsMap {
+      width: 100%;
+      height: 380px;
+      border-radius: var(--radius-sm);
+      z-index: 1;
+    }
+
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background-color: var(--bg-surface) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-color);
+    }
+
+    main {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: #555555;
+      transform: translateY(-2px);
+    }
+
+    .card.hidden {
+      display: none;
+    }
+
+    .card h2 {
+      font-size: var(--font-size-h2);
+      margin-bottom: 6px;
+    }
+
+    .card-location {
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      margin-bottom: 12px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      align-self: flex-start;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .status-badge.available {
+      background-color: rgba(52, 199, 89, 0.15);
+      color: var(--accent-green);
+    }
+
+    .status-badge.limited {
+      background-color: rgba(255, 149, 0, 0.15);
+      color: var(--accent-amber);
+    }
+
+    .status-badge.full {
+      background-color: rgba(255, 59, 48, 0.15);
+      color: var(--accent-red);
+    }
+
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 40px 0;
+      display: none;
+    }
+
+    footer {
+      max-width: var(--max-width);
+      margin: 40px auto 0 auto;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-brand">
+      <img src="PARK.jpeg" alt="ParkLokal Logo" class="brand-logo">
+      <div>
+        <h1>ParkLokal</h1>
+        <p>Real-Time Urban Parking & Routing Assistant</p>
+      </div>
+    </div>
+    <div class="live-indicator">
+      <div class="pulse-dot"></div>
+      <span>Live Simulation Active</span>
+    </div>
+  </header>
+
+  <div class="map-container">
+    <div class="map-header">
+      <span>Interactive GPS Map View</span>
+      <span id="updateTimer">Next Slot Update: 60s</span>
+    </div>
+    <div id="gpsMap"></div>
+  </div>
+
+  <div class="controls-container">
+    <input type="text" id="searchInput" class="search-input" placeholder="Search location or lot name..." />
+    <div class="filter-buttons">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="available">Available</button>
+      <button class="filter-btn" data-filter="limited">Limited</button>
+      <button class="filter-btn" data-filter="full">Full</button>
+    </div>
+  </div>
+
+  <main id="parkingGrid">
+  </main>
+
+  <div id="noResults" class="no-results">
+    <p>No parking locations match your search criteria.</p>
+  </div>
+
+  <footer>
+    <p>&copy; LOKAL PARK | CADIZ 2026</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <script>
+    const parkingLots = [
+      { id: 'lot-1', name: 'Session Parking Slot A', location: 'Central Business Zone', capacity: 30, openSlots: 12, lat: 16.4125, lng: 120.5960 },
+      { id: 'lot-2', name: 'Harrison Road Hub', location: 'Commercial Perimeter', capacity: 20, openSlots: 2, lat: 16.4090, lng: 120.5975 },
+      { id: 'lot-3', name: 'Burnham Park Lot', location: 'Recreational Area', capacity: 50, openSlots: 24, lat: 16.4110, lng: 120.5910 },
+      { id: 'lot-4', name: 'Gov Pack Terminal Lot', location: 'Transit Center', capacity: 25, openSlots: 0, lat: 16.4150, lng: 120.5990 },
+      { id: 'lot-5', name: 'Mines View Park Parking', location: 'Mines View Tourist Zone', capacity: 40, openSlots: 8, lat: 16.4234, lng: 120.6212 },
+      { id: 'lot-6', name: 'Igorot Stone Kingdom Lot', location: 'Long Long-Pucay Proper', capacity: 35, openSlots: 15, lat: 16.4385, lng: 120.5750 },
+      { id: 'lot-7', name: 'Baguio Botanical Garden Hub', location: 'Leonard Wood Road', capacity: 30, openSlots: 5, lat: 16.4132, lng: 120.6120 },
+      { id: 'lot-8', name: 'The Mansion Parking Area', location: 'Romulo Drive', capacity: 25, openSlots: 3, lat: 16.4140, lng: 120.6225 },
+      { id: 'lot-9', name: 'Camp John Hay TechnoHub', location: 'Camp John Hay', capacity: 60, openSlots: 32, lat: 16.4055, lng: 120.6095 },
+      { id: 'lot-10', name: 'Wright Park Parking Lot', location: 'gisidak Street', capacity: 20, openSlots: 0, lat: 16.4148, lng: 120.6189 }
+    ];
+
+    let currentFilter = 'all';
+    let countdown = 60;
+    let mapMarkers = {};
+
+    const parkingGrid = document.getElementById('parkingGrid');
+    const searchInput = document.getElementById('searchInput');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const noResults = document.getElementById('noResults');
+    const updateTimer = document.getElementById('updateTimer');
+
+    const gpsMap = L.map('gpsMap').setView([16.4140, 120.6050], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(gpsMap);
+
+    function getStatus(openSlots) {
+      if (openSlots === 0) return 'full';
+      if (openSlots <= 3) return 'limited';
+      return 'available';
+    }
+
+    function getStatusColor(status) {
+      if (status === 'full') return '#ff3b30';
+      if (status === 'limited') return '#ff9500';
+      return '#34c759';
+    }
+
+    function renderApp() {
+      parkingGrid.innerHTML = '';
+
+      const query = searchInput.value.toLowerCase().trim();
+      let visibleCount = 0;
+
+      parkingLots.forEach(lot => {
+        const status = getStatus(lot.openSlots);
+        const matchesSearch = lot.name.toLowerCase().includes(query) || lot.location.toLowerCase().includes(query);
+        const matchesStatus = currentFilter === 'all' || status === currentFilter;
+
+        const colorHex = getStatusColor(status);
+        if (!mapMarkers[lot.id]) {
+          const marker = L.circleMarker([lot.lat, lot.lng], {
+            radius: 10,
+            fillColor: colorHex,
+            color: '#121212',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.9
+          }).addTo(gpsMap);
+
+          marker.bindPopup(`<b>${lot.name}</b><br>Slots Open: ${lot.openSlots}`);
+          marker.on('click', () => highlightCard(lot.id));
+          mapMarkers[lot.id] = marker;
+        } else {
+          mapMarkers[lot.id].setStyle({ fillColor: colorHex });
+          mapMarkers[lot.id].setPopupContent(`<b>${lot.name}</b><br>Slots Open: ${lot.openSlots}`);
+        }
+
+        if (matchesSearch && matchesStatus) {
+          visibleCount++;
+          const card = document.createElement('section');
+          card.className = 'card';
+          card.id = lot.id;
+          card.setAttribute('data-status', status);
+          
+          let badgeText = `${lot.openSlots} Slots Open`;
+          if (status === 'full') badgeText = '0 Slots Open (Full)';
+
+          card.innerHTML = `
+            <div>
+              <h2>${lot.name}</h2>
+              <p class="card-location">Location: ${lot.location}</p>
+            </div>
+            <span class="status-badge ${status}">${badgeText}</span>
+          `;
+          parkingGrid.appendChild(card);
+        }
+      });
+
+      noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    function highlightCard(id) {
+      const card = document.getElementById(id);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.style.borderColor = 'var(--accent-blue)';
+        setTimeout(() => card.style.borderColor = 'var(--border-color)', 1500);
+      }
+    }
+
+    function simulateLiveUpdates() {
+      parkingLots.forEach(lot => {
+        const change = Math.floor(Math.random() * 3) - 1;
+        lot.openSlots = Math.max(0, Math.min(lot.capacity, lot.openSlots + change));
+      });
+      renderApp();
+    }
+
+    setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        simulateLiveUpdates();
+        countdown = 60;
+      }
+      updateTimer.textContent = `Next Slot Update: ${countdown}s`;
+    }, 1000);
+
+    searchInput.addEventListener('input', renderApp);
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.getAttribute('data-filter');
+        renderApp();
+      });
+    });
+
+    renderApp();
+  </script>
+
+</body>
+</html>
