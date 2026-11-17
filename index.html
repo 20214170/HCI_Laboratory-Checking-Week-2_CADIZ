@@ -15,6 +15,7 @@
       --text-primary: #ffffff;
       --text-secondary: #a0a0a0;
       --accent-blue: #007aff;
+      --accent-blue-hover: #0062cc;
       --accent-green: #34c759;
       --accent-amber: #ff9500;
       --accent-red: #ff3b30;
@@ -43,6 +44,130 @@
       font-family: var(--font-base);
       line-height: 1.6;
       padding: 20px;
+    }
+
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: var(--bg-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 9999;
+    }
+
+    .login-overlay.hidden {
+      display: none;
+    }
+
+    .login-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .login-header img {
+      height: 56px;
+      width: auto;
+      margin-bottom: 12px;
+      object-fit: contain;
+    }
+
+    .login-header h1 {
+      font-size: 1.75rem;
+      color: var(--accent-blue);
+      line-height: 1.2;
+    }
+
+    .login-header p {
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      margin-top: 4px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-body);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .btn-primary {
+      width: 100%;
+      background-color: var(--accent-blue);
+      color: #ffffff;
+      border: none;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-body);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      margin-top: 8px;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-blue-hover);
+    }
+
+    .btn-secondary {
+      width: 100%;
+      background-color: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      margin-top: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-secondary);
+      color: var(--text-primary);
+    }
+
+    .login-error {
+      color: var(--accent-red);
+      font-size: var(--font-size-sm);
+      margin-bottom: 12px;
+      text-align: center;
+      display: none;
+    }
+
+    #appContent.hidden {
+      display: none;
     }
 
     header {
@@ -80,6 +205,13 @@
       font-size: var(--font-size-sm);
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
     .live-indicator {
       display: flex;
       align-items: center;
@@ -90,6 +222,22 @@
       padding: 6px 12px;
       border-radius: 20px;
       border: 1px solid rgba(52, 199, 89, 0.3);
+    }
+
+    .logout-btn {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .logout-btn:hover {
+      border-color: var(--accent-red);
+      color: var(--accent-red);
     }
 
     .pulse-dot {
@@ -274,52 +422,130 @@
 </head>
 <body>
 
-  <header>
-    <div class="header-brand">
-      <img src="PARK.jpeg" alt="ParkLokal Logo" class="brand-logo">
-      <div>
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <img src="PARK.jpeg" alt="ParkLokal Logo" onerror="this.style.display='none'">
         <h1>ParkLokal</h1>
-        <p>Real-Time Urban Parking & Routing Assistant</p>
+        <p>Sign in to access live Baguio parking slots</p>
+      </div>
+
+      <form id="loginForm">
+        <div id="loginError" class="login-error">Please enter both email and password.</div>
+
+        <div class="form-group">
+          <label for="emailInput">Email or Username</label>
+          <input type="text" id="emailInput" class="form-input" placeholder="driver@parklokal.ph" required>
+        </div>
+
+        <div class="form-group">
+          <label for="passwordInput">Password</label>
+          <input type="password" id="passwordInput" class="form-input" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-primary">Log In</button>
+      </form>
+
+      <button type="button" id="demoLoginBtn" class="btn-secondary">Continue as Demo Driver</button>
+    </div>
+  </div>
+
+  <div id="appContent" class="hidden">
+    <header>
+      <div class="header-brand">
+        <img src="PARK.jpeg" alt="ParkLokal Logo" class="brand-logo" onerror="this.style.display='none'">
+        <div>
+          <h1>ParkLokal</h1>
+          <p>Real-Time Urban Parking & Routing Assistant</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="live-indicator">
+          <div class="pulse-dot"></div>
+          <span>Live Simulation Active</span>
+        </div>
+        <button id="logoutBtn" class="logout-btn">Log Out</button>
+      </div>
+    </header>
+
+    <div class="map-container">
+      <div class="map-header">
+        <span>Interactive GPS Map View</span>
+        <span id="updateTimer">Next Slot Update: 60s</span>
+      </div>
+      <div id="gpsMap"></div>
+    </div>
+
+    <div class="controls-container">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search location or lot name..." />
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="available">Available</button>
+        <button class="filter-btn" data-filter="limited">Limited</button>
+        <button class="filter-btn" data-filter="full">Full</button>
       </div>
     </div>
-    <div class="live-indicator">
-      <div class="pulse-dot"></div>
-      <span>Live Simulation Active</span>
+
+    <main id="parkingGrid"></main>
+
+    <div id="noResults" class="no-results">
+      <p>No parking locations match your search criteria.</p>
     </div>
-  </header>
 
-  <div class="map-container">
-    <div class="map-header">
-      <span>Interactive GPS Map View</span>
-      <span id="updateTimer">Next Slot Update: 60s</span>
-    </div>
-    <div id="gpsMap"></div>
+    <footer>
+      <p>&copy; LOKAL PARK | CADIZ 2026</p>
+    </footer>
   </div>
-
-  <div class="controls-container">
-    <input type="text" id="searchInput" class="search-input" placeholder="Search location or lot name..." />
-    <div class="filter-buttons">
-      <button class="filter-btn active" data-filter="all">All</button>
-      <button class="filter-btn" data-filter="available">Available</button>
-      <button class="filter-btn" data-filter="limited">Limited</button>
-      <button class="filter-btn" data-filter="full">Full</button>
-    </div>
-  </div>
-
-  <main id="parkingGrid">
-  </main>
-
-  <div id="noResults" class="no-results">
-    <p>No parking locations match your search criteria.</p>
-  </div>
-
-  <footer>
-    <p>&copy; LOKAL PARK | CADIZ 2026</p>
-  </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <script>
+    const loginOverlay = document.getElementById('loginOverlay');
+    const appContent = document.getElementById('appContent');
+    const loginForm = document.getElementById('loginForm');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginError = document.getElementById('loginError');
+    const demoLoginBtn = document.getElementById('demoLoginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    function unlockApp(user) {
+      sessionStorage.setItem('parklokal_user', user);
+      loginOverlay.classList.add('hidden');
+      appContent.classList.remove('hidden');
+      
+      setTimeout(() => {
+        gpsMap.invalidateSize();
+      }, 100);
+    }
+
+    function lockApp() {
+      sessionStorage.removeItem('parklokal_user');
+      appContent.classList.add('hidden');
+      loginOverlay.classList.remove('hidden');
+      passwordInput.value = '';
+    }
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!email || !password) {
+        loginError.style.display = 'block';
+        return;
+      }
+
+      loginError.style.display = 'none';
+      unlockApp(email);
+    });
+
+    demoLoginBtn.addEventListener('click', () => {
+      unlockApp('demo@parklokal.ph');
+    });
+
+    logoutBtn.addEventListener('click', lockApp);
+
     const parkingLots = [
       { id: 'lot-1', name: 'Session Parking Slot A', location: 'Central Business Zone', capacity: 30, openSlots: 12, lat: 16.4125, lng: 120.5960 },
       { id: 'lot-2', name: 'Harrison Road Hub', location: 'Commercial Perimeter', capacity: 20, openSlots: 2, lat: 16.4090, lng: 120.5975 },
@@ -330,7 +556,7 @@
       { id: 'lot-7', name: 'Baguio Botanical Garden Hub', location: 'Leonard Wood Road', capacity: 30, openSlots: 5, lat: 16.4132, lng: 120.6120 },
       { id: 'lot-8', name: 'The Mansion Parking Area', location: 'Romulo Drive', capacity: 25, openSlots: 3, lat: 16.4140, lng: 120.6225 },
       { id: 'lot-9', name: 'Camp John Hay TechnoHub', location: 'Camp John Hay', capacity: 60, openSlots: 32, lat: 16.4055, lng: 120.6095 },
-      { id: 'lot-10', name: 'Wright Park Parking Lot', location: 'gisidak Street', capacity: 20, openSlots: 0, lat: 16.4148, lng: 120.6189 }
+      { id: 'lot-10', name: 'Wright Park Parking Lot', location: 'Gisidak Street', capacity: 20, openSlots: 0, lat: 16.4148, lng: 120.6189 }
     ];
 
     let currentFilter = 'all';
@@ -454,6 +680,11 @@
     });
 
     renderApp();
+
+    const savedUser = sessionStorage.getItem('parklokal_user');
+    if (savedUser) {
+      unlockApp(savedUser);
+    }
   </script>
 
 </body>
